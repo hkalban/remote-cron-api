@@ -1,0 +1,55 @@
+version: "3.9"
+   
+services:
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    expose:
+      - "5433"
+    environment:
+      - POSTGRES_DB=remote_cron
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: golang:alpine
+    working_dir: /api
+    volumes:
+      - /Users/hishamkalban/workspace/remote-cron-api:/api
+    command: go run main.go --signal SIGTERM
+    ports:
+      - "3000:3000"
+    expose:
+      - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    links:
+      - db
+
+  # Simulating remote machines
+  # machine1:
+  #   build: ./remote-machine
+  #   command: tail -f /dev/null
+  # machine2:
+  #   build: ./remote-machine
+  #   command: tail -f /dev/null
+  # machine3:
+  #   build: ./remote-machine
+  #   command: tail -f /dev/null
+  # machine4:
+  #   build: ./remote-machine
+  #   command: tail -f /dev/null
+
+volumes:
+  database_data:
+    driver: local
